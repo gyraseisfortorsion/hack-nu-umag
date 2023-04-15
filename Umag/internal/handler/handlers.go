@@ -20,7 +20,10 @@ func NewHandler(serv *service.Service) *Handler {
 
 func (h *Handler) Start() http.Handler {
 	h.Router.HandleFunc("/api/sales", h.sales)
+	h.Router.HandleFunc("/api/sales/", h.salesId)
 	h.Router.HandleFunc("/api/supplies", h.supplies)
+	h.Router.HandleFunc("/api/supplies/", h.suppliesId)
+
 	h.Router.HandleFunc("/api/reports", h.reports)
 	return h.Router
 }

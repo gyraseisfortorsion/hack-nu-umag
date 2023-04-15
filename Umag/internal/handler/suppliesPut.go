@@ -10,7 +10,7 @@ import (
 )
 
 func (h *Handler) SuppliesPut(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Path[len("/api/sales/"):]
+	idStr := r.URL.Path[len("/api/supplies/"):]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
@@ -22,13 +22,13 @@ func (h *Handler) SuppliesPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var item model.Item
+	var item model.ItemSupply
 	if err := json.Unmarshal(body, &item); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.services.SupplyServiceIR.UpdateSales(id, item); err != nil {
+	if err := h.services.SupplyServiceIR.UpdateSupply(id, item); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

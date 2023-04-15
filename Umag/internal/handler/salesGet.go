@@ -9,10 +9,6 @@ import (
 )
 
 func (h *Handler) SalesGet(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Has("id") {
-		h.SalesGetById(w, r)
-		return
-	}
 	var barcode int
 	if r.URL.Query().Has("barcode") {
 		var err error
@@ -45,23 +41,6 @@ func (h *Handler) SalesGet(w http.ResponseWriter, r *http.Request) {
 	// log.Println(barcode)
 	// log.Println(toTime)
 	Items, err := h.services.SalesServiceIR.Get(barcode, toTime, fromTime)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if err := json.NewEncoder(w).Encode(Items); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-}
-
-func (h *Handler) SalesGetById(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		http.Error(w, "err", http.StatusNotFound)
-		return
-	}
-	Items, err := h.services.SalesServiceIR.GetById(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

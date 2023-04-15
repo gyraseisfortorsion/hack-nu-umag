@@ -2,13 +2,14 @@ package repo
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	"back/model"
 )
 
 type SalesRepoIR interface {
-	GetById(int) ([]model.Item, error)
+	GetById(int) (model.Item, error)
 	Get(int, time.Time, time.Time) ([]model.Item, error)
 	GetByToTime(time.Time) ([]model.Item, error)
 	GetByFromTime(time.Time) ([]model.Item, error)
@@ -31,42 +32,38 @@ func newSalesRepo(db *sql.DB) SalesRepoIR {
 	}
 }
 
-func (s *SalesRepoStr) GetById(id int) ([]model.Item, error) {
-	var items []model.Item
+func (s *SalesRepoStr) GetById(id int) (model.Item, error) {
+	var item model.Item
 	query := `SELECT 
-		id,
-		barcode,
-		quantity,
-		price,
-		sale_time
-	FROM
-		sale
-	WHERE
-		id = ?`
+        id,
+        barcode,
+        quantity,
+        price,
+        sale_time
+    FROM
+        sale
+    WHERE
+        id = ?`
 	stmt, err := s.db.Prepare(query)
 	if err != nil {
-		return nil, err
+		log.Println(err.Error())
+		return item, err
 	}
 	defer stmt.Close()
 
-	rows, err := stmt.Query(id)
+	var saleTimeStr string
+	if err := stmt.QueryRow(id).Scan(&item.ID, &item.Barcode, &item.Quantity, &item.Price, &saleTimeStr); err != nil {
+		log.Println(err.Error())
+		return item, err
+	}
+	item.SaleTime, err = time.Parse("2006-01-02 15:04:05", saleTimeStr)
 	if err != nil {
-		return nil, err
+		log.Println(err.Error())
+		return item, err
+
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var item model.Item
-		var saleTimeStr string
-		if err := rows.Scan(&item.ID, &item.Barcode, &item.Quantity, &item.Price, &saleTimeStr); err != nil {
-			return nil, err
-		}
-		item.SaleTime, err = time.Parse("2006-01-02 15:04:05", saleTimeStr)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, item)
-	}
-	return items, nil
+
+	return item, nil
 }
 
 func (s *SalesRepoStr) Get(barcode int, fromTime time.Time, toTime time.Time) ([]model.Item, error) {

@@ -8,28 +8,28 @@ import (
 )
 
 type SupplyServiceIR interface {
-	GetById(int) ([]model.Item, error)
-	Get(int, time.Time, time.Time) ([]model.Item, error)
-	CreateSales(model.Item) (int, error)
-	UpdateSales(id int, item model.Item) error
-	DeleteSales(id int) error
+	GetById(int) (model.ItemSupply, error)
+	Get(int, time.Time, time.Time) ([]model.ItemSupply, error)
+	CreateSupply(model.ItemSupply) (int, error)
+	UpdateSupply(id int, item model.ItemSupply) error
+	DeleteSupply(id int) error
 }
 
 type SupplyServiceStr struct {
 	repo repo.SuppliesRepoIR
 }
 
-func NewServiceSupply(repo repo.SuppliesRepoIR) SalesServiceIR {
+func NewServiceSupply(repo repo.SuppliesRepoIR) SupplyServiceIR {
 	return &SupplyServiceStr{
 		repo: repo,
 	}
 }
 
-func (s *SupplyServiceStr) GetById(id int) ([]model.Item, error) {
+func (s *SupplyServiceStr) GetById(id int) (model.ItemSupply, error) {
 	return s.repo.GetById(id)
 }
 
-func (s *SupplyServiceStr) Get(barcode int, fromTime time.Time, toTime time.Time) ([]model.Item, error) {
+func (s *SupplyServiceStr) Get(barcode int, fromTime time.Time, toTime time.Time) ([]model.ItemSupply, error) {
 	if barcode == 0 && fromTime.IsZero() && !toTime.IsZero() {
 		return s.repo.GetByToTime(toTime)
 	}
@@ -51,14 +51,14 @@ func (s *SupplyServiceStr) Get(barcode int, fromTime time.Time, toTime time.Time
 	return s.repo.Get(barcode, fromTime, toTime)
 }
 
-func (s *SupplyServiceStr) CreateSales(item model.Item) (int, error) {
-	return s.repo.CreateSales(item)
+func (s *SupplyServiceStr) CreateSupply(item model.ItemSupply) (int, error) {
+	return s.repo.CreateSupply(item)
 }
 
-func (s *SupplyServiceStr) UpdateSales(id int, item model.Item) error {
-	return s.repo.UpdateSales(id, item)
+func (s *SupplyServiceStr) UpdateSupply(id int, item model.ItemSupply) error {
+	return s.repo.UpdateSupply(id, item)
 }
 
-func (s *SupplyServiceStr) DeleteSales(id int) error {
-	return s.repo.DeleteSales(id)
+func (s *SupplyServiceStr) DeleteSupply(id int) error {
+	return s.repo.DeleteSupply(id)
 }

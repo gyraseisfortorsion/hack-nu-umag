@@ -9,3 +9,11 @@ type Item struct {
 	Quantity int       `json:"quantity"`
 	SaleTime time.Time `json:"saleTime"`
 }
+
+type ItemSupply struct {
+	ID         int       `json:"id"`
+	Barcode    int       `json:"barcode"`
+	Price      float64   `json:"price"`
+	Quantity   int       `json:"quantity"`
+	SupplyTime time.Time `json:"saleTime"`
+}

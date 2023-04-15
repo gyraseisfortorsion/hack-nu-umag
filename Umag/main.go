@@ -18,8 +18,13 @@ func main() {
 	// configDb.InsertDataSupplies(db)
 	defer db.Close()
 	log.Println("Successfully Initiated the Data Base")
+
 	repo := repo.NewRepo(db)
+	log.Println("Successfully Initiated the Repository")
+
 	serve := service.NewService(repo)
+	log.Println("Successfully Initiated the Service")
+
 	handler := handler.NewHandler(serve)
 	if err := http.ListenAndServe(":8080", handler.Start()); err != nil {
 		panic(err)

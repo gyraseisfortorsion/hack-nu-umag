@@ -8,7 +8,7 @@ import (
 )
 
 type SalesServiceIR interface {
-	GetById(int) ([]model.Item, error)
+	GetById(int) (model.Item, error)
 	Get(int, time.Time, time.Time) ([]model.Item, error)
 	CreateSales(model.Item) (int, error)
 	UpdateSales(id int, item model.Item) error
@@ -25,7 +25,7 @@ func NewServiceSales(repo repo.SalesRepoIR) SalesServiceIR {
 	}
 }
 
-func (s *SalesServiceStr) GetById(id int) ([]model.Item, error) {
+func (s *SalesServiceStr) GetById(id int) (model.Item, error) {
 	return s.repo.GetById(id)
 }
 

@@ -12,7 +12,7 @@ func (h *Handler) SuppliesDelete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-	if err := h.services.SupplyServiceIR.DeleteSales(id); err != nil {
+	if err := h.services.SupplyServiceIR.DeleteSupply(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

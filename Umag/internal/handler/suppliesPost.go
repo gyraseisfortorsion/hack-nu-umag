@@ -14,9 +14,9 @@ func (h *Handler) SuppliesPost(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	var item model.Item
+	var item model.ItemSupply
 	err = json.Unmarshal(body, &item)
-	id, err := h.services.SupplyServiceIR.CreateSales(item)
+	id, err := h.services.SupplyServiceIR.CreateSupply(item)
 	resp := struct {
 		id int
 	}{

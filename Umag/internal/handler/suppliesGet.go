@@ -9,10 +9,6 @@ import (
 )
 
 func (h *Handler) SuppliesGet(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Has("id") {
-		h.SuppliesGetById(w, r)
-		return
-	}
 	var barcode int
 	if r.URL.Query().Has("barcode") {
 		var err error
