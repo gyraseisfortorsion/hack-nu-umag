@@ -8,9 +8,9 @@ import (
 	"time"
 )
 
-func (h *Handler) SalesGet(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SuppliesGet(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Has("id") {
-		h.SalesGetById(w, r)
+		h.SuppliesGetById(w, r)
 		return
 	}
 	var barcode int
@@ -44,7 +44,7 @@ func (h *Handler) SalesGet(w http.ResponseWriter, r *http.Request) {
 	}
 	// log.Println(barcode)
 	// log.Println(toTime)
-	Items, err := h.services.SalesServiceIR.Get(barcode, toTime, fromTime)
+	Items, err := h.services.SupplyServiceIR.Get(barcode, toTime, fromTime)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -55,13 +55,13 @@ func (h *Handler) SalesGet(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) SalesGetById(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SuppliesGetById(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil {
 		http.Error(w, "err", http.StatusNotFound)
 		return
 	}
-	Items, err := h.services.SalesServiceIR.GetById(id)
+	Items, err := h.services.SupplyServiceIR.GetById(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

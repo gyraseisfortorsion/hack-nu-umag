@@ -4,10 +4,12 @@ import "back/internal/repo"
 
 type Service struct {
 	SalesServiceIR
+	SupplyServiceIR
 }
 
 func NewService(repo *repo.Repo) *Service {
 	return &Service{
-		SalesServiceIR: NewServiceSales(repo.SalesRepoIR),
+		SalesServiceIR:  NewServiceSales(repo.SalesRepoIR),
+		SupplyServiceIR: NewServiceSupply(repo.SuppliesRepoIR),
 	}
 }
