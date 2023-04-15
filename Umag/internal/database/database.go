@@ -41,16 +41,16 @@ func (c *ConfigDb) InitDB() *sql.DB {
 	return db
 }
 
-// func (c *ConfigDb) CreateTables(db *sql.DB) {
-// 	log.Println("CreateTables")
-// 	file, err := ioutil.ReadFile("./migrations/create_tables.sql")
-// 	if err != nil {
-// 		log.Fatal(err.Error())
-// 	}
-// 	if _, err := db.Exec(string(file)); err != nil {
-// 		log.Fatal(err.Error())
-// 	}
-// }
+func (c *ConfigDb) CreateTables(db *sql.DB) {
+	log.Println("CreateTables")
+	file, err := ioutil.ReadFile("./migrations/create_tables.sql")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	if _, err := db.Exec(string(file)); err != nil {
+		log.Fatal(err.Error())
+	}
+}
 
 func (c *ConfigDb) InsertDataSales(db *sql.DB) {
 	file, err := ioutil.ReadFile("./migrations/insert_sales.sql")
