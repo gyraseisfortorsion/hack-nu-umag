@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -18,12 +17,12 @@ func (h *Handler) reports(w http.ResponseWriter, r *http.Request) {
 
 	fromTime, err := time.Parse(layout, r.URL.Query().Get("fromTime"))
 	if err != nil {
-		fmt.Println("Error parsing time string:", err)
+		http.Error(w, "err", http.StatusNotFound)
 		return
 	}
 	toTime, err := time.Parse(layout, r.URL.Query().Get("toTime"))
 	if err != nil {
-		fmt.Println("Error parsing time string:", err)
+		http.Error(w, "err", http.StatusNotFound)
 		return
 	}
 	log.Println(barcode, fromTime, toTime)
