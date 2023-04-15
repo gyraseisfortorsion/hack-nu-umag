@@ -3,142 +3,279 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"log"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
-// Define a struct for our Supply model
-type Supply struct {
-	ID       int       `json:"id"`
-	Quantity int       `json:"quantity"`
-	Price    float64   `json:"price"`
-	Time     time.Time `json:"time"`
-}
+const (
+	dbDriver   = "mysql"
+	dbUser     = "root"
+	dbPassword = "password"
+	dbName     = "supply"
+	dbHost     = "localhost"
+	dbPort     = 3306
+)
 
-// Define global DB variable
 var db *sql.DB
 
-// Function to initialize the database connection
-func initDB() {
-	var err error
-	db, err = sql.Open("mysql", "root:password5@tcp(127.0.0.1:3306)/umag_hacknu")
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
+type Product struct {
+	ID        int             `json:"id"`
+	Barcode   string          `json:"barcode"`
+	Quantity  int             `json:"quantity"`
+	Price     sql.NullFloat64 `json:"price"`
+	Timestamp time.Time       `json:"timestamp"`
 }
 
-// Function to retrieve all supplies from the database
-func getAllSupplies(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT * FROM supplies")
+func main() {
+	// Connect to the database
+	var err error
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true", dbUser, dbPassword, dbHost, dbPort, dbName)
+	db, err = sql.Open(dbDriver, dsn)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
+		//return
+	}
+	defer db.Close()
+
+	// Create the router
+	r := mux.NewRouter()
+
+	// Add the routes
+	r.HandleFunc("/products", getProducts).Methods("GET").Queries("fromTime", "{fromTime}", "toTime", "{toTime}", "barcode", "{barcode}")
+	r.HandleFunc("/products", createProduct).Methods("POST")
+	r.HandleFunc("/products/{id}", getProduct).Methods("GET")
+	r.HandleFunc("/products/{id}", updateProduct).Methods("PUT")
+	r.HandleFunc("/products/{id}", deleteProduct).Methods("DELETE")
+
+	// Enable CORS
+	handler := cors.Default().Handler(r)
+
+	// Start the server
+	fmt.Println("Server listening on port 8080")
+	http.ListenAndServe(":8080", handler)
+}
+
+func getProducts(w http.ResponseWriter, r *http.Request) {
+	// Get the query parameters
+	fromTimeStr := r.FormValue("fromTime")
+	toTimeStr := r.FormValue("toTime")
+	barcode := r.FormValue("barcode")
+
+	// Parse the timestamps
+	fromTime, err := time.Parse(time.RFC3339, fromTimeStr)
+	if err != nil {
+		http.Error(w, "Invalid fromTime", http.StatusBadRequest)
+		return
+	}
+	toTime, err := time.Parse(time.RFC3339, toTimeStr)
+	if err != nil {
+		http.Error(w, "Invalid toTime", http.StatusBadRequest)
+		return
+	}
+
+	// Build the query
+	query := "SELECT id, barcode, quantity, price, timestamp FROM products WHERE timestamp BETWEEN ? AND ?"
+	args := []interface{}{fromTime, toTime}
+	if barcode != "" {
+		query += " AND barcode = ?"
+		args = append(args, barcode)
+	}
+
+	// Execute the query
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		panic(err)
 	}
 	defer rows.Close()
 
-	supplies := make([]Supply, 0)
+	// Build the
+	// products slice
+	products := []Product{}
+	// Iterate over the rows
 	for rows.Next() {
-		supply := Supply{}
-		err := rows.Scan(&supply.ID, &supply.Quantity, &supply.Price, &supply.Time)
+		// Create a new Product
+		var product Product
+		err := rows.Scan(&product.ID, &product.Barcode, &product.Quantity, &product.Price, &product.Timestamp)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
-		supplies = append(supplies, supply)
+
+		// Append the Product to the slice
+		products = append(products, product)
 	}
 
-	json.NewEncoder(w).Encode(supplies)
+	// Encode the products slice as JSON and write it to the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(products)
 }
 
-// Function to retrieve a single supply by ID from the database
-func getSupply(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
+func createProduct(w http.ResponseWriter, r *http.Request) {
+	// Decode the request body into a Product
+	var product Product
+	err := json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	// Set the timestamp to the current time
+	product.Timestamp = time.Now()
+
+	// Insert the Product into the database
+	result, err := db.Exec("INSERT INTO products (barcode, quantity, price, timestamp) VALUES (?, ?, ?, ?)", product.Barcode, product.Quantity, product.Price, product.Timestamp)
+	if err != nil {
+		panic(err)
 	}
 
-	row := db.QueryRow("SELECT * FROM supplies WHERE id = ?", id)
-
-	supply := Supply{}
-	err = row.Scan(&supply.ID, &supply.Quantity, &supply.Price, &supply.Time)
+	// Get the ID of the new Product
+	id, err := result.LastInsertId()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	json.NewEncoder(w).Encode(supply)
+	// Set the ID of the Product
+	product.ID = int(id)
+
+	// Encode the Product as JSON and write it to the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
+
 }
 
-// Function to create a new supply in the database
-func createSupply(w http.ResponseWriter, r *http.Request) {
-	var supply Supply
-	json.NewDecoder(r.Body).Decode(&supply)
-
-	result, err := db.Exec("INSERT INTO supplies (quantity, price, time) VALUES (?, ?, ?)", supply.Quantity, supply.Price, supply.Time)
+func getProduct(w http.ResponseWriter, r *http.Request) {
+	// Get the ID parameter from the URL
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	// Convert the ID parameter to an int
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
 	}
 
-	lastInsertID, err := result.LastInsertId()
-	if err != nil {
-		log.Fatal(err)
+	// Query the database for the Product with the given ID
+	row := db.QueryRow("SELECT id, barcode, quantity, price, timestamp FROM products WHERE id = ?", id)
+
+	// Create a new Product
+	var product Product
+	err = row.Scan(&product.ID, &product.Barcode, &product.Quantity, &product.Price, &product.Timestamp)
+	if err == sql.ErrNoRows {
+		http.Error(w, "Product not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		panic(err)
 	}
 
-	supply.ID = int(lastInsertID)
+	// Encode the Product as JSON and write it to the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
 
-	json.NewEncoder(w).Encode(supply)
 }
 
-// Function to update an existing supply in the database
-func updateSupply(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
+func updateProduct(w http.ResponseWriter, r *http.Request) {
+	// Get the ID parameter from the URL
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	// Convert the ID parameter to an int
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
 	}
 
-	var supply Supply
-	json.NewDecoder(r.Body).Decode(&supply)
-
-	_, err = db.Exec("UPDATE supplies SET quantity=?, price=?, time=? WHERE id=?", supply.Quantity, supply.Price, supply.Time, id)
+	// Decode the request body into a Product
+	var product Product
+	err = json.NewDecoder(r.Body).Decode(&product)
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
 	}
 
-	supply.ID = id
+	// Ensure that the ID of the request body matches the ID in the URL
+	if product.ID != id {
+		http.Error(w, "ID in request body does not match ID in URL", http.StatusBadRequest)
+		return
+	}
 
-	json.NewEncoder(w).Encode(supply)
+	// Update the Product in the database
+	result, err := db.Exec("UPDATE products SET barcode = ?, quantity = ?, price = ?, timestamp = ? WHERE id = ?", product.Barcode, product.Quantity, product.Price, product.Timestamp, id)
+	if err != nil {
+		panic(err)
+	}
+	// Get the number of rows affected by the update
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
 
+	// If no rows were affected, return a 404 Not Found error
+	if rowsAffected == 0 {
+		http.Error(w, "Product not found", http.StatusNotFound)
+		return
+	}
+
+	// Encode the Product as JSON and write it to the response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
 }
-func deleteSupply(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
+
+func deleteProduct(w http.ResponseWriter, r *http.Request) {
+	// Get the ID parameter from the URL
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	// Convert the ID parameter to an int
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Fatal(err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
 	}
-	log.Println(id)
+
+	// Delete the Product from the database
+	result, err := db.Exec("DELETE FROM products WHERE id = ?", id)
+	if err != nil {
+		panic(err)
+	}
+
+	// Get the number of rows affected by the delete
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+
+	// If no rows were affected, return a 404 Not Found error
+	if rowsAffected == 0 {
+		http.Error(w, "Product not found", http.StatusNotFound)
+		return
+	}
+
+	// Return a 204 No Content status code
 	w.WriteHeader(http.StatusNoContent)
 }
-func main() {
-	// Initialize the database connection
-	initDB()
-	defer db.Close()
-	router := mux.NewRouter()
 
-	// Define our API endpoints
-	router.HandleFunc("/supplies", getAllSupplies).Methods("GET")
-	router.HandleFunc("/supplies/{id}", getSupply).Methods("GET")
-	router.HandleFunc("/supplies", createSupply).Methods("POST")
-	router.HandleFunc("/supplies/{id}", updateSupply).Methods("PUT")
-	router.HandleFunc("/supplies/{id}", deleteSupply).Methods("DELETE")
+// func main() {
+// // Open a connection to the MySQL database
+// db, err = sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/database")
+// if err != nil {
+// panic(err)
+// }
+// // Close the database connection when the program exits
+// defer db.Close()
 
-	// Start the HTTP server
-	log.Fatal(http.ListenAndServe(":8080", router))
-}
+// // Create a new Router
+// r := mux.NewRouter()
+
+// // Define the routes
+// r.HandleFunc("/products", getProducts).Methods("GET").Queries("fromTime", "{fromTime}", "toTime", "{toTime}", "barcode", "{barcode}")
+// r.HandleFunc("/products", createProduct).Methods("POST")
+// r.HandleFunc("/products/{id}", getProduct).Methods("GET")
+// r.HandleFunc("/products/{id}", updateProduct).Methods("PUT")
+// r.HandleFunc("/products/{id}", deleteProduct).Methods("DELETE")
+
+// // Start the HTTP server
+// http.ListenAndServe(":8080", r)
+// }
