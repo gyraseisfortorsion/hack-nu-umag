@@ -1,9 +1,3 @@
-all: 
-	UpDb 
-	rundDB
-	buildApp
-	runApp
-
 UpDb: 
 	docker build -t my-mysql-image .
 rundDB:
