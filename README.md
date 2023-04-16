@@ -1,5 +1,5 @@
 # hack-nu-umag
-
+Code is inside Umag folder
 ##  Running the Application with Docker
 This readme provides step-by-step instructions on how to run the application using Docker.
 ##  Prerequisites
