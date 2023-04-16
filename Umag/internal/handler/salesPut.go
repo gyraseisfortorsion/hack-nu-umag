@@ -33,5 +33,5 @@ func (h *Handler) SalesPut(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(204)
 }

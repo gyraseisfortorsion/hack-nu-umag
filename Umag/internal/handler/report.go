@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"log"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,5 +25,13 @@ func (h *Handler) reports(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "err", http.StatusNotFound)
 		return
 	}
-	log.Println(barcode, fromTime, toTime)
+	resp, err := h.services.ReportServiceIR.GetReport(barcode, fromTime, toTime)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 }

@@ -13,7 +13,7 @@ import (
 func main() {
 	configDb := database.NewConfDb()
 	db := configDb.InitDB()
-	// configDb.CreateTables(db)
+	// configDb.AddCollumns(db)
 	// configDb.InsertDataSales(db)
 	// configDb.InsertDataSupplies(db)
 	defer db.Close()

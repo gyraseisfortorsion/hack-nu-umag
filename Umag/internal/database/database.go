@@ -41,9 +41,9 @@ func (c *ConfigDb) InitDB() *sql.DB {
 	return db
 }
 
-func (c *ConfigDb) CreateTables(db *sql.DB) {
-	log.Println("CreateTables")
-	file, err := ioutil.ReadFile("./migrations/create_tables.sql")
+func (c *ConfigDb) AddCollumns(db *sql.DB) {
+	// log.Println("CreateTables")
+	file, err := ioutil.ReadFile("./migrations/newColumn.sql")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
