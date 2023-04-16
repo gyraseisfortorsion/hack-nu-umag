@@ -2,6 +2,7 @@ all:
 	UpDb 
 	rundDB
 	buildApp
+	runApp
 
 UpDb: 
 	docker build -t my-mysql-image .
@@ -10,7 +11,7 @@ rundDB:
 down: docker stop my-mysql-cont
 	docker system prune
 buildApp: 
-		docker build -t back ./Umag
+	docker build -t back ./Umag
 runApp: 
 	docker run -d --name backend1 -p 8080:8080  back
 
